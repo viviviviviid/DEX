@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-function DeployPage({ onSubmit }) {
+const DeployPage = ({ onSubmit }) => {
     const [tokenName, setTokenName] = useState('');
     const [tokenAmount, setTokenAmount] = useState('');
 

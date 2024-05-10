@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-function DEX() {
+const DEX = () => {
     const [price, setPrice] = useState(null);
 
     useEffect(() => {
