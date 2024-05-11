@@ -45,16 +45,11 @@ func InitDB() {
 
 func GetUserInfo(address string) (*model.User, error) {
 	user := &model.User{}
-	err := db.QueryRow("SELECT wallet_address, human_verified FROM users WHERE wallet_address = $1", address).Scan(&user.WalletAddress, &user.HumanVerified)
+	err := db.QueryRow("SELECT id, wallet_address, human_verified, signature FROM users WHERE wallet_address = $1", address).Scan(&user.ID, &user.WalletAddress, &user.HumanVerified, &user.Signature)
 	return user, err
 }
 
-func SetUser(address string) error {
-	_, err := db.Exec("INSERT INTO users (wallet_address, human_verified) VALUES ($1, $2)", address, false)
-	return err
-}
-
-func SetVerified(address string) error {
-	_, err := db.Exec("UPDATE users SET human_verified = $1 WHERE wallet_address = $2", true, address)
+func SetUser(user model.User) error {
+	_, err := db.Exec("INSERT INTO users (wallet_address, human_verified, signature) VALUES ($1, $2, $3)", user.WalletAddress, user.HumanVerified, user.Signature)
 	return err
 }

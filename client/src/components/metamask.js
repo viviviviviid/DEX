@@ -6,6 +6,7 @@ const MetamaskConnection = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isHuman, setIsHuman] = useState(false);
     const [showCaptcha, setShowCaptcha] = useState(false);
+    const [sig, setSig] = useState("");
 
     useEffect(() => {
         checkNetwork();
@@ -54,23 +55,36 @@ const MetamaskConnection = () => {
     const authenticateUser = async () => {
         const accounts = await window.ethereum.request({ method: 'eth_accounts' });
         const walletAddress = accounts[0];
-        
-        setShowCaptcha(true);
+    
+        // 메시지 서명 요청
+        const message = "Plz Sign";
+        const signer = new Web3Provider(window.ethereum).getSigner();
+        const signature = await signer.signMessage(message);
+        setSig(signature)
+    
+        // 서명과 주소를 서버로 전송
         fetch('http://localhost:5555/api/auth', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ walletAddress })
+            body: JSON.stringify({ "wallet_address": walletAddress, "signature": signature })
         })
         .then(response => response.json())
         .then(data => {
             if (data.IsNewUser) {
-                console.log("Please complete CAPTCHA to verify you're a human.");
+                console.log("CAPTCHA");
                 setShowCaptcha(true);
             } else {
-                console.log(data)
-                // 신규유저가 아니지만, 캡차를 통한 인간인증을 안한사람이 있을 수 있으므로, data.isVerified를 추가적으로 확인해야함
-                // setIsLoggedIn(true);
-                console.log("Login successful.");
+                if (data.signature !== signature) { // DB에 저장된 서명값과 다를경우 반려
+                    alert("Warning. Signature is different");
+                }
+
+                if (data.IsVerified) {
+                    setIsLoggedIn(true);
+                    setShowCaptcha(false);
+                    console.log("Login successful.");
+                } else {
+                    setShowCaptcha(true);
+                }
             }
         })
         .catch(error => console.error('Error during authentication:', error));
@@ -80,12 +94,12 @@ const MetamaskConnection = () => {
         const accounts = await window.ethereum.request({ method: 'eth_accounts' });
         const walletAddress = accounts[0];
 
-        fetch('http://localhost:5555/api/verifyHuman', {
+        fetch('http://localhost:5555/api/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ walletAddress, isHuman })
+            body: JSON.stringify({ "wallet_address": walletAddress, "isHuman": isHuman, "signature": sig })
         })
-        .then(response => response.json())
+        .then(response => console.log(response))
         .then(() => {
             setIsLoggedIn(true);
             console.log("Human verification successful and user logged in.");

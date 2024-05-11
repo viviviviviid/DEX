@@ -1,18 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import DEX from './components/dex'
-import DeployPage from './components/token'
 import MetamaskConnection from './components/metamask';
+import DeployPage from './components/token';
+import DEX from './components/dex';
 import './App.css';
 
-
 function App() {
-  return(
+  return (
     <Router>
         <Routes>
           <Route path="/" element={<MetamaskConnection />} />
           <Route path="/token" element={<DeployPage />} />
-          <Route path="/dex" element={<DEX />} />
+          <Route path="/dex/contract/:contractAddress/pair/:tokenAddress" element={<DEX />} />
         </Routes>
     </Router>
   );

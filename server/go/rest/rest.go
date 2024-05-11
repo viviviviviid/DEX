@@ -16,7 +16,8 @@ import (
 )
 
 var (
-	authReq = model.AuthReq{}
+	authReq  = model.AuthReq{}
+	userInfo = model.User{}
 )
 
 // documentation provides basic API documentation
@@ -29,18 +30,9 @@ func documentation(rw http.ResponseWriter, r *http.Request) {
 func authenticate(res http.ResponseWriter, req *http.Request) {
 	fmt.Println("/api/auth")
 	body, err := io.ReadAll(req.Body)
-	if err != nil {
-		utils.HandleErr(err)
-		res.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
+	utils.HandleErr(err)
 	err = json.Unmarshal(body, &authReq)
-	if err != nil {
-		utils.HandleErr(err)
-		res.WriteHeader(http.StatusBadRequest)
-		return
-	}
+	utils.HandleErr(err)
 
 	userInfo, err := db.GetUserInfo(authReq.WalletAddress)
 	if err != nil {
@@ -50,6 +42,7 @@ func authenticate(res http.ResponseWriter, req *http.Request) {
 				WalletAddress: "",
 				IsNewUser:     true,
 				IsVerified:    false,
+				Signature:     "",
 			}
 			res.WriteHeader(http.StatusOK)
 			json.NewEncoder(res).Encode(authRes)
@@ -65,53 +58,28 @@ func authenticate(res http.ResponseWriter, req *http.Request) {
 		WalletAddress: userInfo.WalletAddress,
 		IsNewUser:     false,
 		IsVerified:    userInfo.HumanVerified,
+		Signature:     userInfo.Signature,
 	}
 	res.WriteHeader(http.StatusOK)
 	json.NewEncoder(res).Encode(authRes)
 }
 
-// // signUp handles user registration
-// func signUp(res http.ResponseWriter, req *http.Request) {
-// 	fmt.Println("Accessing /api/register")
-// 	body, err := io.ReadAll(req.Body)
-// 	utils.HandleErr(err)
-// 	var user model.User
-// 	err = json.Unmarshal(body, &user)
-// 	utils.HandleErr(err)
+func register(res http.ResponseWriter, req *http.Request) {
+	fmt.Println("/api/register")
+	body, err := io.ReadAll(req.Body)
+	utils.HandleErr(err)
+	err = json.Unmarshal(body, &userInfo)
+	utils.HandleErr(err)
 
-// 	// Add user to the database
-// 	err = db.SetUser(user.WalletAddress)
-// 	utils.HandleErr(err)
+	fmt.Println(userInfo)
+	db.SetUser(userInfo)
 
-// 	res.WriteHeader(http.StatusCreated)
-// 	json.NewEncoder(res).Encode(user)
-// }
-
-// // signIn handles user login
-// func signIn(res http.ResponseWriter, req *http.Request) {
-// 	fmt.Println("Accessing /api/login")
-// 	body, err := io.ReadAll(req.Body)
-// 	utils.HandleErr(err)
-// 	var user model.User
-// 	err = json.Unmarshal(body, &user)
-// 	utils.HandleErr(err)
-
-// 	// Check if user exists in the database
-// 	userInfo, err := db.GetUserInfo(user.WalletAddress)
-// 	if err == sql.ErrNoRows {
-// 		// If user does not exist, redirect to signUp
-// 		signUp(res, req)
-// 	} else {
-// 		utils.HandleErr(err)
-// 		// Update HumanVerified status
-// 		err = db.SetVerified(user.WalletAddress)
-// 		utils.HandleErr(err)
-
-// 		// Respond with successful login
-// 		res.WriteHeader(http.StatusOK)
-// 		json.NewEncoder(res).Encode(userInfo)
-// 	}
-// }
+	if err != nil {
+		utils.HandleErr(err)
+		res.WriteHeader(http.StatusInternalServerError)
+	}
+	res.WriteHeader(http.StatusCreated) // 201 Created
+}
 
 // Start initializes the HTTP server and listens on port 5555
 func Start() {
@@ -120,6 +88,7 @@ func Start() {
 	router := mux.NewRouter()
 	router.HandleFunc("/", documentation).Methods("GET")
 	router.HandleFunc("/api/auth", authenticate).Methods("POST")
+	router.HandleFunc("/api/register", register).Methods("POST")
 
 	corsHandler := handlers.CORS(
 		handlers.AllowedOrigins([]string{"http://localhost:3000"}),
