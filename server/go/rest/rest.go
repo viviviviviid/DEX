@@ -18,12 +18,13 @@ import (
 var (
 	authReq  = model.AuthReq{}
 	userInfo = model.User{}
+	orderReq = model.OrderReq{}
 )
 
 // documentation provides basic API documentation
 func documentation(rw http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
-		json.NewEncoder(rw).Encode("Welcome to the API. Use /api/register to sign up and /api/login to sign in.")
+		json.NewEncoder(rw).Encode("Welcome to the API.")
 	}
 }
 
@@ -42,7 +43,7 @@ func authenticate(res http.ResponseWriter, req *http.Request) {
 				WalletAddress: "",
 				IsNewUser:     true,
 				IsVerified:    false,
-				Signature:     "",
+				IsSignature:   false,
 			}
 			res.WriteHeader(http.StatusOK)
 			json.NewEncoder(res).Encode(authRes)
@@ -58,7 +59,7 @@ func authenticate(res http.ResponseWriter, req *http.Request) {
 		WalletAddress: userInfo.WalletAddress,
 		IsNewUser:     false,
 		IsVerified:    userInfo.HumanVerified,
-		Signature:     userInfo.Signature,
+		IsSignature:   true,
 	}
 	res.WriteHeader(http.StatusOK)
 	json.NewEncoder(res).Encode(authRes)
@@ -70,8 +71,6 @@ func register(res http.ResponseWriter, req *http.Request) {
 	utils.HandleErr(err)
 	err = json.Unmarshal(body, &userInfo)
 	utils.HandleErr(err)
-
-	fmt.Println(userInfo)
 	db.SetUser(userInfo)
 
 	if err != nil {
@@ -79,6 +78,28 @@ func register(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusInternalServerError)
 	}
 	res.WriteHeader(http.StatusCreated) // 201 Created
+}
+
+func order(res http.ResponseWriter, req *http.Request) {
+	fmt.Println("/api/order")
+	body, err := io.ReadAll(req.Body)
+	utils.HandleErr(err)
+	err = json.Unmarshal(body, &orderReq)
+	utils.HandleErr(err)
+
+	// Signature 비교
+	if !db.CheckSignature(orderReq.WalletAddress, orderReq.Signature) {
+		res.Header().Set("Content-Type", "application/json")
+		res.WriteHeader(http.StatusUnauthorized)
+		response := map[string]string{"error": "Signature is different"}
+		jsonResp, err := json.Marshal(response)
+		if err != nil {
+			fmt.Println("Error encoding JSON")
+			return
+		}
+		res.Write(jsonResp)
+		return
+	}
 }
 
 // Start initializes the HTTP server and listens on port 5555
@@ -89,6 +110,7 @@ func Start() {
 	router.HandleFunc("/", documentation).Methods("GET")
 	router.HandleFunc("/api/auth", authenticate).Methods("POST")
 	router.HandleFunc("/api/register", register).Methods("POST")
+	router.HandleFunc("/api/order", order).Methods("POST")
 
 	corsHandler := handlers.CORS(
 		handlers.AllowedOrigins([]string{"http://localhost:3000"}),

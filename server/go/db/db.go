@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/m/go/model"
+	"github.com/m/go/utils"
 )
 
 var (
@@ -49,7 +51,19 @@ func GetUserInfo(address string) (*model.User, error) {
 	return user, err
 }
 
-func SetUser(user model.User) error {
+func SetUser(user model.User) {
 	_, err := db.Exec("INSERT INTO users (wallet_address, human_verified, signature) VALUES ($1, $2, $3)", user.WalletAddress, user.HumanVerified, user.Signature)
-	return err
+	utils.HandleErr(err)
+}
+
+func CheckSignature(address string, signature string) bool {
+	var dbSignature string
+	address = strings.ToLower(address) // 소문자로 변환
+	err := db.QueryRow("SELECT signature FROM users WHERE wallet_address = $1", address).Scan(&dbSignature)
+	if err != nil {
+		utils.HandleErr(err)
+		return false // 데이터베이스 오류 또는 해당 주소에 대한 서명이 없을 경우
+	}
+
+	return dbSignature == signature
 }

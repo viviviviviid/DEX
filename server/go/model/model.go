@@ -14,7 +14,16 @@ type AuthReq struct {
 
 type AuthRes struct {
 	WalletAddress string `db:"wallet_address" json:"wallet_address"`
-	Signature     string `db:"signature" json:"signature"`
 	IsNewUser     bool
 	IsVerified    bool
+	IsSignature   bool
+}
+
+type OrderReq struct {
+	WalletAddress string  `db:"wallet_address" json:"wallet_address"`
+	TokenAddress  string  `db:"token_address" json:"token_address"`
+	Amount        int     `db:"amount" json:"amount"`
+	Price         float64 `db:"price" json:"price"`
+	IsBuy         bool    `db:"order_type" json:"order_type"`
+	Signature     string  `db:"signature" json:"signature"`
 }
