@@ -48,7 +48,7 @@ const MetamaskConnection = () => {
             });
         } catch (switchError) {
             console.error("Error switching to Sepolia:", switchError);
-            alert("Error switching network. Please add Sepolia Testnet manually in MetaMask if not already done.");
+            alert("Error switching network. Sepolia Testnet ");
         }
     };
 
@@ -74,10 +74,7 @@ const MetamaskConnection = () => {
                 console.log("CAPTCHA");
                 setShowCaptcha(true);
             } else {
-                if (data.signature !== signature) { // DB에 저장된 서명값과 다를경우 반려
-                    alert("Warning. Signature is different");
-                }
-
+                console.log(data)
                 if (data.IsVerified) {
                     setIsLoggedIn(true);
                     setShowCaptcha(false);
@@ -87,17 +84,18 @@ const MetamaskConnection = () => {
                 }
             }
         })
-        .catch(error => console.error('Error during authentication:', error));
+        .catch(error => console.error('Error  authentication:', error));
     };
 
     const setVerifiedUser = async () => {
         const accounts = await window.ethereum.request({ method: 'eth_accounts' });
         const walletAddress = accounts[0];
+        console.log(isHuman)
 
         fetch('http://localhost:5555/api/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ "wallet_address": walletAddress, "isHuman": isHuman, "signature": sig })
+            body: JSON.stringify({ "wallet_address": walletAddress, "human_verified": true, "signature": sig })
         })
         .then(response => console.log(response))
         .then(() => {
@@ -110,7 +108,8 @@ const MetamaskConnection = () => {
     return (
         <div>
             {isLoggedIn ? (
-                <p>You are logged in.</p>
+                <p>You are logged in.
+                     </p>
             ) : (
                 <>
                     <button onClick={checkNetwork}>Connect to MetaMask</button>

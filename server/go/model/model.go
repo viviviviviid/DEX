@@ -24,6 +24,16 @@ type OrderReq struct {
 	TokenAddress  string  `db:"token_address" json:"token_address"`
 	Amount        int     `db:"amount" json:"amount"`
 	Price         float64 `db:"price" json:"price"`
-	IsBuy         bool    `db:"order_type" json:"order_type"`
+	IsBuy         bool    `db:"is_buy" json:"is_buy"`
 	Signature     string  `db:"signature" json:"signature"`
+}
+
+type Order struct {
+	ID            int     `db:"id" json:"id"`
+	WalletAddress string  `db:"wallet_address" json:"wallet_address"`
+	Amount        int     `db:"amount" json:"amount"`
+	Price         float64 `db:"price" json:"price"`
+	IsBuy         bool    `db:"is_buy" json:"is_buy"`
+	Status        string  `db:"status" json:"status"`
+	UpdatedAt     string  `db:"updated_at" json:"updated_at"`
 }

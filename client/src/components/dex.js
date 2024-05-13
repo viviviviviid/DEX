@@ -110,6 +110,7 @@ const Dex = () => {
                 )}
             </DepositSection>
             <TradeControls 
+                contractAddress={contractAddress}
                 tokenAddress={tokenAddress}
                 onBuyLimit={handleBuyLimit} 
                 onSellLimit={handleSellLimit} 
